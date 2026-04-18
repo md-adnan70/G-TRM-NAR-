@@ -1,5 +1,3 @@
-torch
-adam-atan2
 einops
 tqdm
 coolname
@@ -17,4 +15,5 @@ setuptools-scm
 pydantic-core
 huggingface_hub 
 numba
+datasets
 # triton
