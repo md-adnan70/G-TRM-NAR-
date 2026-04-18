@@ -305,72 +305,120 @@ class TinyRecursiveReasoningModel_ACTV1(nn.Module):
         return TinyRecursiveReasoningModel_ACTV1Carry(new_inner_carry, new_steps, halted, new_current_data), outputs
 
     @torch.no_grad()
-    def generate(
-        self,
-        input_ids: torch.Tensor,
-        max_new_tokens: int,
-        iterations: int = 30,
-        *,
-        tokenizer,
-        **kwargs,
-    ):
+    def generate(self, input_ids: torch.Tensor, max_new_tokens: int, temperature: float = 0.1, repetition_penalty: float = 1.2):
         self.eval()
         b_size = input_ids.shape[0]
-
-        mask_token_id = tokenizer.token_to_id("[MASK]")
-        pad_token_id = tokenizer.token_to_id("[PAD]")
+        
+        # We need to know the EOS token ID to stop properly
+        # Usually 3 in HF Tokenizers, but you should verify your specific ID!
         eos_token_id = tokenizer.token_to_id("[EOS]")
-            
-        current_masks = torch.full((b_size, max_new_tokens), mask_token_id, dtype=torch.long, device=input_ids.device)
-        current_sequence = torch.cat([input_ids, current_masks], dim=1)
-            
-        for step in range(iterations):
+        
+        for step in range(max_new_tokens):
             batch = {
-                "inputs": current_sequence,
+                "inputs": input_ids,
                 "puzzle_identifiers": torch.zeros((b_size, self.config.num_puzzle_identifiers), device=input_ids.device, dtype=torch.int32)
-                }
+            }
             carry = self.initial_carry(batch)
-                
+            
             for _ in range(self.config.halt_max_steps):
                 carry, outputs = self.forward(carry, batch)
                 if carry.halted.all():
                     break
-                
-            logits = outputs["logits"]
-            logits[:, :, mask_token_id] = -float('inf')
-                
-            probs = torch.softmax(logits, dim=-1)
-            confidence, predicted_tokens = torch.max(probs, dim=-1)
-                
-            gen_start_idx = input_ids.shape[1]
-            generated_preds = predicted_tokens[:, gen_start_idx:]
-            generated_conf = confidence[:, gen_start_idx:]
-                
-                # --- THE NAR REPETITION PENALTY ---
-                # Artificially shatter the confidence of repeating tokens so they get re-masked
-            for b in range(b_size):
-                for seq_idx in range(1, generated_preds.shape[1]):
-                    if generated_preds[b, seq_idx] == generated_preds[b, seq_idx-1]:
-                        # If a token repeats, drop its confidence significantly
-                        generated_conf[b, seq_idx] *= 0.2 
-                
-                # The [EOS] Enforcer
-            for b in range(b_size):
-                eos_positions = (generated_preds[b] == eos_token_id).nonzero(as_tuple=True)[0]
-                if len(eos_positions) > 0:
-                    first_eos = eos_positions[0]
-                    generated_preds[b, first_eos+1:] = pad_token_id
-                    generated_conf[b, first_eos+1:] = 1.0 
-                
-            ratio_to_mask = 1.0 - ((step + 1) / iterations)
-            num_to_mask = int(max_new_tokens * ratio_to_mask)
-                
-            if num_to_mask > 0:
-                lowest_conf_indices = torch.topk(-generated_conf, k=num_to_mask, dim=-1).indices
-                current_sequence[:, gen_start_idx:] = generated_preds
-                current_sequence[:, gen_start_idx:].scatter_(1, lowest_conf_indices, mask_token_id)
-            else:
-                current_sequence[:, gen_start_idx:] = generated_preds
+            
+            next_token_logits = outputs["logits"][:, -1, :].clone()
+            
+            # --- NEW: REPETITION PENALTY ---
+            # Penalize tokens that have already been generated in the sequence
+            for i in range(b_size):
+                for token_id in set(input_ids[i].tolist()):
+                    if next_token_logits[i, token_id] < 0:
+                        next_token_logits[i, token_id] *= repetition_penalty
+                    else:
+                        next_token_logits[i, token_id] /= repetition_penalty
+            
+            # --- NEW: PREVENT IMMEDIATE EOS PANIC ---
+            # Forbid the model from outputting EOS as the very first generated token
+            if step == 0:
+                next_token_logits[:, eos_token_id] = float('-inf')
 
-        final_generation = current_sequence[:, input_ids.shape[1]:]
-        return final_generation
+            next_token_logits = next_token_logits / temperature
+            probs = F.softmax(next_token_logits, dim=-1)
+            next_token = torch.multinomial(probs, num_samples=1)
+            
+            # --- THE BRAKES ---
+            if next_token.item() == eos_token_id: 
+                break
+            
+            input_ids = torch.cat([input_ids, next_token], dim=1)
+            
+        return input_ids
+    # @torch.no_grad()
+    # def generate(
+    #     self,
+    #     input_ids: torch.Tensor,
+    #     max_new_tokens: int,
+    #     iterations: int = 30,
+    #     *,
+    #     tokenizer,
+    #     **kwargs,
+    # ):
+    #     self.eval()
+    #     b_size = input_ids.shape[0]
+
+    #     mask_token_id = tokenizer.token_to_id("[MASK]")
+    #     pad_token_id = tokenizer.token_to_id("[PAD]")
+    #     eos_token_id = tokenizer.token_to_id("[EOS]")
+            
+    #     current_masks = torch.full((b_size, max_new_tokens), mask_token_id, dtype=torch.long, device=input_ids.device)
+    #     current_sequence = torch.cat([input_ids, current_masks], dim=1)
+            
+    #     for step in range(iterations):
+    #         batch = {
+    #             "inputs": current_sequence,
+    #             "puzzle_identifiers": torch.zeros((b_size, self.config.num_puzzle_identifiers), device=input_ids.device, dtype=torch.int32)
+    #             }
+    #         carry = self.initial_carry(batch)
+                
+    #         for _ in range(self.config.halt_max_steps):
+    #             carry, outputs = self.forward(carry, batch)
+    #             if carry.halted.all():
+    #                 break
+                
+    #         logits = outputs["logits"]
+    #         logits[:, :, mask_token_id] = -float('inf')
+                
+    #         probs = torch.softmax(logits, dim=-1)
+    #         confidence, predicted_tokens = torch.max(probs, dim=-1)
+                
+    #         gen_start_idx = input_ids.shape[1]
+    #         generated_preds = predicted_tokens[:, gen_start_idx:]
+    #         generated_conf = confidence[:, gen_start_idx:]
+                
+    #             # --- THE NAR REPETITION PENALTY ---
+    #             # Artificially shatter the confidence of repeating tokens so they get re-masked
+    #         for b in range(b_size):
+    #             for seq_idx in range(1, generated_preds.shape[1]):
+    #                 if generated_preds[b, seq_idx] == generated_preds[b, seq_idx-1]:
+    #                     # If a token repeats, drop its confidence significantly
+    #                     generated_conf[b, seq_idx] *= 0.2 
+                
+    #             # The [EOS] Enforcer
+    #         for b in range(b_size):
+    #             eos_positions = (generated_preds[b] == eos_token_id).nonzero(as_tuple=True)[0]
+    #             if len(eos_positions) > 0:
+    #                 first_eos = eos_positions[0]
+    #                 generated_preds[b, first_eos+1:] = pad_token_id
+    #                 generated_conf[b, first_eos+1:] = 1.0 
+                
+    #         ratio_to_mask = 1.0 - ((step + 1) / iterations)
+    #         num_to_mask = int(max_new_tokens * ratio_to_mask)
+                
+    #         if num_to_mask > 0:
+    #             lowest_conf_indices = torch.topk(-generated_conf, k=num_to_mask, dim=-1).indices
+    #             current_sequence[:, gen_start_idx:] = generated_preds
+    #             current_sequence[:, gen_start_idx:].scatter_(1, lowest_conf_indices, mask_token_id)
+    #         else:
+    #             current_sequence[:, gen_start_idx:] = generated_preds
+
+    #     final_generation = current_sequence[:, input_ids.shape[1]:]
+    #     return final_generation
