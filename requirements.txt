@@ -16,4 +16,6 @@ pydantic-core
 huggingface_hub 
 numba
 datasets
+tokenizers
+# ipywidgets widgetsnbextension
 # triton

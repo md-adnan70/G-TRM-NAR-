@@ -304,54 +304,328 @@ class TinyRecursiveReasoningModel_ACTV1(nn.Module):
 
         return TinyRecursiveReasoningModel_ACTV1Carry(new_inner_carry, new_steps, halted, new_current_data), outputs
 
-    @torch.no_grad()
-    def generate(self, input_ids: torch.Tensor, max_new_tokens: int, temperature: float = 0.1, repetition_penalty: float = 1.2):
-        self.eval()
-        b_size = input_ids.shape[0]
-        
-        # We need to know the EOS token ID to stop properly
-        # Usually 3 in HF Tokenizers, but you should verify your specific ID!
-        eos_token_id = tokenizer.token_to_id("[EOS]")
-        
-        for step in range(max_new_tokens):
-            batch = {
-                "inputs": input_ids,
-                "puzzle_identifiers": torch.zeros((b_size, self.config.num_puzzle_identifiers), device=input_ids.device, dtype=torch.int32)
-            }
-            carry = self.initial_carry(batch)
-            
-            for _ in range(self.config.halt_max_steps):
-                carry, outputs = self.forward(carry, batch)
-                if carry.halted.all():
-                    break
-            
-            next_token_logits = outputs["logits"][:, -1, :].clone()
-            
-            # --- NEW: REPETITION PENALTY ---
-            # Penalize tokens that have already been generated in the sequence
-            for i in range(b_size):
-                for token_id in set(input_ids[i].tolist()):
-                    if next_token_logits[i, token_id] < 0:
-                        next_token_logits[i, token_id] *= repetition_penalty
-                    else:
-                        next_token_logits[i, token_id] /= repetition_penalty
-            
-            # --- NEW: PREVENT IMMEDIATE EOS PANIC ---
-            # Forbid the model from outputting EOS as the very first generated token
-            if step == 0:
-                next_token_logits[:, eos_token_id] = float('-inf')
 
-            next_token_logits = next_token_logits / temperature
-            probs = F.softmax(next_token_logits, dim=-1)
-            next_token = torch.multinomial(probs, num_samples=1)
+    # @torch.no_grad()
+    # def generate_pseudo_ar_fixed(
+    #     self,
+    #     input_ids: torch.Tensor,
+    #     max_new_tokens: int,
+    #     *,
+    #     tokenizer,
+    #     **kwargs,
+    # ):
+    # def generate(self, input_ids: torch.Tensor, max_new_tokens: int, temperature: float = 0.1, repetition_penalty: float = 1.2):
+    #     self.eval()
+    #     b_size = input_ids.shape[0]
+    #     mask_token_id = tokenizer.token_to_id("[MASK]")
+    #     pad_token_id = tokenizer.token_to_id("[PAD]")
+        
+    #     # We need to know the EOS token ID to stop properly
+    #     # Usually 3 in HF Tokenizers, but you should verify your specific ID!
+    #     eos_token_id = tokenizer.token_to_id("[EOS]")
+        
+    #     # --- THE CANVAS FIX ---
+    #     # Create a padded universe so the bidirectional heads have a "right-hand wall"
+    #     pads = torch.full((b_size, max_new_tokens), pad_token_id, dtype=torch.long, device=input_ids.device)
+    #     current_sequence = torch.cat([input_ids, pads], dim=1)
+        
+    #     print("Decoding in Pseudo-AR Mode (Fixed Recursion + Canvas)...")
+
+    #     for step in range(max_new_tokens):
+    #         target_idx = input_ids.shape[1] + step
             
-            # --- THE BRAKES ---
-            if next_token.item() == eos_token_id: 
-                break
+    #         # Place exactly ONE mask at the target generation spot
+    #         current_sequence[:, target_idx] = mask_token_id
             
-            input_ids = torch.cat([input_ids, next_token], dim=1)
+        
+    #     for step in range(max_new_tokens):
+    #         batch = {
+    #             "inputs": input_ids,
+    #             "puzzle_identifiers": torch.zeros((b_size, self.config.num_puzzle_identifiers), device=input_ids.device, dtype=torch.int32)
+    #         }
+    #         }
+    #         carry = self.initial_carry(batch)
             
-        return input_ids
+    #         # --- THE OVER-RECURSION FIX ---
+    #         # Call forward EXACTLY ONCE, identically to your train_epoch logic.
+    #         # Your internal model architecture handles the H_cycles naturally.
+    #         _, outputs = self.forward(carry, batch)
+                
+    #         logits = outputs["logits"]
+            
+    #         # Isolate the logits strictly for the single mask
+    #         mask_logits = logits[:, target_idx, :]
+    #         mask_logits[:, mask_token_id] = -float('inf') 
+    #         mask_logits[:, pad_token_id] = -float('inf') # Do not allow it to guess [PAD]
+            
+    #         # --- GREEDY DECODING ---
+    #         # Remove temperature entropy. We want the network's most confident syntactic choice.
+    #         predicted_token = torch.argmax(mask_logits, dim=-1)
+            
+    #         # Replace the mask with the predicted token
+    #         current_sequence[:, target_idx] = predicted_token.squeeze(-1)
+            
+    #         # Stop early if the model naturally ends the story
+    #         if (predicted_token == eos_token_id).any():
+    #             break
+
+    #     return current_sequence[:, input_ids.shape[1]:]
+
+    # @torch.no_grad()
+    # def generate_parallel_diluted(
+    #     self,
+    #     input_ids: torch.Tensor,
+    #     max_new_tokens: int,
+    #     iterations: int = 15, # 15 passes is a good sweet spot for TRMs
+    #     *,
+    #     tokenizer,
+    #     **kwargs,
+    # ):
+    #     self.eval()
+    #     b_size = input_ids.shape[0]
+
+    #     mask_token_id = tokenizer.token_to_id("[MASK]")
+    #     pad_token_id = tokenizer.token_to_id("[PAD]")
+    #     eos_token_id = tokenizer.token_to_id("[EOS]")
+
+    #     # --- THE PADDING DILUTION TRICK ---
+    #     # Calculate how much padding we need to keep the mask ratio <= 40%
+    #     prompt_len = input_ids.shape[1]
+        
+    #     # 0.40 = max_new_tokens / (prompt_len + max_new_tokens + pad_len)
+    #     required_total_len = int(max_new_tokens / 0.40)
+    #     pad_len = max(0, required_total_len - (prompt_len + max_new_tokens))
+        
+    #     # Construct the perfectly stable 40% masked canvas
+    #     masks = torch.full((b_size, max_new_tokens), mask_token_id, dtype=torch.long, device=input_ids.device)
+    #     pads = torch.full((b_size, pad_len), pad_token_id, dtype=torch.long, device=input_ids.device)
+        
+    #     current_sequence = torch.cat([input_ids, masks, pads], dim=1)
+    #     gen_start_idx = prompt_len
+    #     gen_end_idx = prompt_len + max_new_tokens
+        
+    #     print(f"Diluted Sequence Length: {current_sequence.shape[1]} (Mask Ratio: 40%)")
+
+    #     # Iterative Parallel Unmasking
+    #     for step in range(iterations):
+    #         batch = {
+    #             "inputs": current_sequence,
+    #             "puzzle_identifiers": torch.zeros((b_size, self.config.num_puzzle_identifiers), device=input_ids.device, dtype=torch.int32)
+    #         }
+    #         carry = self.initial_carry(batch)
+            
+    #         # Ensure this matches your trained H_cycles!
+    #         for _ in range(self.config.halt_max_steps): 
+    #             carry, outputs = self.forward(carry, batch)
+    #             if carry.halted.all():
+    #                 break
+                    
+    #         logits = outputs["logits"]
+    #         logits[:, :, mask_token_id] = -float('inf')
+            
+    #         probs = torch.softmax(logits, dim=-1)
+    #         confidence, predicted_tokens = torch.max(probs, dim=-1)
+            
+    #         # Isolate our target generation zone (ignore prompt and padding)
+    #         target_preds = predicted_tokens[:, gen_start_idx:gen_end_idx]
+    #         target_conf = confidence[:, gen_start_idx:gen_end_idx]
+            
+    #         # NAR Repetition Penalty
+    #         for b in range(b_size):
+    #             for seq_idx in range(1, target_preds.shape[1]):
+    #                 if target_preds[b, seq_idx] == target_preds[b, seq_idx-1]:
+    #                     target_conf[b, seq_idx] *= 0.2
+            
+    #         # Unmasking Decay Schedule
+    #         ratio_to_mask = 1.0 - ((step + 1) / iterations)
+    #         num_to_mask = int(max_new_tokens * ratio_to_mask)
+            
+    #         if num_to_mask > 0:
+    #             lowest_conf_indices = torch.topk(-target_conf, k=num_to_mask, dim=-1).indices
+    #             current_sequence[:, gen_start_idx:gen_end_idx] = target_preds
+    #             current_sequence[:, gen_start_idx:gen_end_idx].scatter_(1, lowest_conf_indices, mask_token_id)
+    #         else:
+    #             current_sequence[:, gen_start_idx:gen_end_idx] = target_preds
+
+    #     # Post-process: Extract only the generated tokens and enforce EOS
+    #     final_generation = current_sequence[:, gen_start_idx:gen_end_idx]
+    #     for b in range(b_size):
+    #         eos_positions = (final_generation[b] == eos_token_id).nonzero(as_tuple=True)[0]
+    #         if len(eos_positions) > 0:
+    #             final_generation[b, eos_positions[0]+1:] = pad_token_id
+
+    #     return final_generation
+
+    # @torch.no_grad()
+    # def generate_chunked(
+    #     self,
+    #     input_ids: torch.Tensor,
+    #     max_new_tokens: int,
+    #     chunk_size: int = 8,
+    #     iterations_per_chunk: int = 5,
+    #     *,
+    #     tokenizer,
+    #     **kwargs,
+    # ):
+    #     self.eval()
+    #     b_size = input_ids.shape[0]
+
+    #     mask_token_id = tokenizer.token_to_id("[MASK]")
+    #     pad_token_id = tokenizer.token_to_id("[PAD]")
+    #     eos_token_id = tokenizer.token_to_id("[EOS]")
+        
+    #     current_sequence = input_ids.clone()
+    #     tokens_generated = 0
+        
+    #     print(f"Generating {max_new_tokens} tokens in chunks of {chunk_size}...")
+
+    #     while tokens_generated < max_new_tokens:
+    #         # 1. Append only a small chunk of masks (Keeps Mask Ratio < 40%)
+    #         current_chunk_size = min(chunk_size, max_new_tokens - tokens_generated)
+    #         new_masks = torch.full((b_size, current_chunk_size), mask_token_id, dtype=torch.long, device=input_ids.device)
+    #         current_sequence = torch.cat([current_sequence, new_masks], dim=1)
+            
+    #         chunk_start_idx = current_sequence.shape[1] - current_chunk_size
+            
+    #         # 2. Iterative Unmasking specifically for this chunk
+    #         for step in range(iterations_per_chunk):
+    #             batch = {
+    #                 "inputs": current_sequence,
+    #                 "puzzle_identifiers": torch.zeros((b_size, self.config.num_puzzle_identifiers), device=input_ids.device, dtype=torch.int32)
+    #             }
+    #             carry = self.initial_carry(batch)
+                
+    #             # Forward pass (Ensure your ACT loop matches your trained depth!)
+    #             for _ in range(self.config.halt_max_steps):
+    #                 carry, outputs = self.forward(carry, batch)
+    #                 if carry.halted.all():
+    #                     break
+                
+    #             logits = outputs["logits"]
+    #             logits[:, :, mask_token_id] = -float('inf')
+                
+    #             probs = torch.softmax(logits, dim=-1)
+    #             confidence, predicted_tokens = torch.max(probs, dim=-1)
+                
+    #             # Extract predictions for the current chunk
+    #             chunk_preds = predicted_tokens[:, chunk_start_idx:]
+    #             chunk_conf = confidence[:, chunk_start_idx:]
+                
+    #             # Repetition Penalty (Only penalize within the chunk to force vocabulary variety)
+    #             for b in range(b_size):
+    #                 for seq_idx in range(1, chunk_preds.shape[1]):
+    #                     if chunk_preds[b, seq_idx] == chunk_preds[b, seq_idx-1]:
+    #                         chunk_conf[b, seq_idx] *= 0.2 
+                
+    #             # Masking schedule for the chunk
+    #             ratio_to_mask = 1.0 - ((step + 1) / iterations_per_chunk)
+    #             num_to_mask = int(current_chunk_size * ratio_to_mask)
+                
+    #             if num_to_mask > 0:
+    #                 lowest_conf_indices = torch.topk(-chunk_conf, k=num_to_mask, dim=-1).indices
+    #                 current_sequence[:, chunk_start_idx:] = chunk_preds
+    #                 current_sequence[:, chunk_start_idx:].scatter_(1, lowest_conf_indices, mask_token_id)
+    #             else:
+    #                 current_sequence[:, chunk_start_idx:] = chunk_preds
+            
+    #         tokens_generated += current_chunk_size
+            
+    #         # Early stopping if EOS is generated
+    #         if (current_sequence == eos_token_id).any():
+    #             break
+
+    #     # Post-process to pad everything after the first EOS
+    #     final_generation = current_sequence[:, input_ids.shape[1]:]
+    #     for b in range(b_size):
+    #         eos_positions = (final_generation[b] == eos_token_id).nonzero(as_tuple=True)[0]
+    #         if len(eos_positions) > 0:
+    #             first_eos = eos_positions[0]
+    #             final_generation[b, first_eos+1:] = pad_token_id
+
+    #     return final_generation
+
+    # @torch.no_grad()
+    # def generate(
+    #     self,
+    #     input_ids: torch.Tensor,
+    #     max_new_tokens: int,
+    #     iterations: int = 30,
+    #     *,
+    #     tokenizer,
+    #     **kwargs,
+    # ):
+    #     self.eval()
+    #     b_size = input_ids.shape[0]
+
+    #     mask_token_id = tokenizer.token_to_id("[MASK]")
+    #     pad_token_id = tokenizer.token_to_id("[PAD]")
+    #     eos_token_id = tokenizer.token_to_id("[EOS]")
+            
+    #     current_masks = torch.full((b_size, max_new_tokens), mask_token_id, dtype=torch.long, device=input_ids.device)
+    #     current_sequence = torch.cat([input_ids, current_masks], dim=1)
+            
+    #     for step in range(iterations):
+    #         batch = {
+    #             "inputs": current_sequence,
+    #             "puzzle_identifiers": torch.zeros((b_size, self.config.num_puzzle_identifiers), device=input_ids.device, dtype=torch.int32)
+    #             }
+    #         carry = self.initial_carry(batch)
+                
+    #         for _ in range(self.config.halt_max_steps):
+    #             carry, outputs = self.forward(carry, batch)
+    #             if carry.halted.all():
+    #                 break
+                
+    #         logits = outputs["logits"]
+    #         logits[:, :, mask_token_id] = -float('inf')
+                
+    #         probs = torch.softmax(logits, dim=-1)
+    #         confidence, predicted_tokens = torch.max(probs, dim=-1)
+                
+    #         gen_start_idx = input_ids.shape[1]
+    #         generated_preds = predicted_tokens[:, gen_start_idx:]
+    #         generated_conf = confidence[:, gen_start_idx:]
+                
+    #             # --- THE NAR REPETITION PENALTY ---
+    #             # Artificially shatter the confidence of repeating tokens so they get re-masked
+    #         for b in range(b_size):
+    #             for seq_idx in range(1, generated_preds.shape[1]):
+    #                 if generated_preds[b, seq_idx] == generated_preds[b, seq_idx-1]:
+    #                     # If a token repeats, drop its confidence significantly
+    #                     generated_conf[b, seq_idx] *= 0.2 
+            
+        #     for _ in range(self.config.halt_max_steps):
+        #         carry, outputs = self.forward(carry, batch)
+        #         if carry.halted.all():
+        #             break
+            
+        #     next_token_logits = outputs["logits"][:, -1, :].clone()
+            
+        #     # --- NEW: REPETITION PENALTY ---
+        #     # Penalize tokens that have already been generated in the sequence
+        #     for i in range(b_size):
+        #         for token_id in set(input_ids[i].tolist()):
+        #             if next_token_logits[i, token_id] < 0:
+        #                 next_token_logits[i, token_id] *= repetition_penalty
+        #             else:
+        #                 next_token_logits[i, token_id] /= repetition_penalty
+            
+        #     # --- NEW: PREVENT IMMEDIATE EOS PANIC ---
+        #     # Forbid the model from outputting EOS as the very first generated token
+        #     if step == 0:
+        #         next_token_logits[:, eos_token_id] = float('-inf')
+
+        #     next_token_logits = next_token_logits / temperature
+        #     probs = F.softmax(next_token_logits, dim=-1)
+        #     next_token = torch.multinomial(probs, num_samples=1)
+            
+        #     # --- THE BRAKES ---
+        #     if next_token.item() == eos_token_id: 
+        #         break
+            
+        #     input_ids = torch.cat([input_ids, next_token], dim=1)
+            
+        # return input_ids
     # @torch.no_grad()
     # def generate(
     #     self,
@@ -409,7 +683,16 @@ class TinyRecursiveReasoningModel_ACTV1(nn.Module):
     #                 first_eos = eos_positions[0]
     #                 generated_preds[b, first_eos+1:] = pad_token_id
     #                 generated_conf[b, first_eos+1:] = 1.0 
+    #             # The [EOS] Enforcer
+    #         for b in range(b_size):
+    #             eos_positions = (generated_preds[b] == eos_token_id).nonzero(as_tuple=True)[0]
+    #             if len(eos_positions) > 0:
+    #                 first_eos = eos_positions[0]
+    #                 generated_preds[b, first_eos+1:] = pad_token_id
+    #                 generated_conf[b, first_eos+1:] = 1.0 
                 
+    #         ratio_to_mask = 1.0 - ((step + 1) / iterations)
+    #         num_to_mask = int(max_new_tokens * ratio_to_mask)
     #         ratio_to_mask = 1.0 - ((step + 1) / iterations)
     #         num_to_mask = int(max_new_tokens * ratio_to_mask)
                 
@@ -419,6 +702,14 @@ class TinyRecursiveReasoningModel_ACTV1(nn.Module):
     #             current_sequence[:, gen_start_idx:].scatter_(1, lowest_conf_indices, mask_token_id)
     #         else:
     #             current_sequence[:, gen_start_idx:] = generated_preds
+    #         if num_to_mask > 0:
+    #             lowest_conf_indices = torch.topk(-generated_conf, k=num_to_mask, dim=-1).indices
+    #             current_sequence[:, gen_start_idx:] = generated_preds
+    #             current_sequence[:, gen_start_idx:].scatter_(1, lowest_conf_indices, mask_token_id)
+    #         else:
+    #             current_sequence[:, gen_start_idx:] = generated_preds
 
+    #     final_generation = current_sequence[:, input_ids.shape[1]:]
+    #     return final_generation
     #     final_generation = current_sequence[:, input_ids.shape[1]:]
     #     return final_generation
