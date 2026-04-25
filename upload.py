@@ -305,6 +305,55 @@ class TinyRecursiveReasoningModel_ACTV1(nn.Module):
         return TinyRecursiveReasoningModel_ACTV1Carry(new_inner_carry, new_steps, halted, new_current_data), outputs
 
 
+
+    @torch.no_grad()
+    def generate(self, input_ids: torch.Tensor,  max_new_tokens: int, temperature: float = 0.1, repetition_penalty: float = 1.2):
+        self.eval()
+        b_size = input_ids.shape[0]
+        
+        # We need to know the EOS token ID to stop properly
+        # Usually 3 in HF Tokenizers, but you should verify your specific ID!
+        eos_token_id = tokenizer.token_to_id("[EOS]")
+        
+        for step in range(max_new_tokens):
+            batch = {
+                "inputs": input_ids,
+                "puzzle_identifiers": torch.zeros((b_size, self.config.num_puzzle_identifiers), device=input_ids.device, dtype=torch.int32)
+            }
+            carry = self.initial_carry(batch)
+            
+            for _ in range(self.config.halt_max_steps):
+                carry, outputs = self.forward(carry, batch)
+                if carry.halted.all():
+                    break
+            
+            next_token_logits = outputs["logits"][:, -1, :].clone()
+            
+            # --- NEW: REPETITION PENALTY ---
+            # Penalize tokens that have already been generated in the sequence
+            for i in range(b_size):
+                for token_id in set(input_ids[i].tolist()):
+                    if next_token_logits[i, token_id] < 0:
+                        next_token_logits[i, token_id] *= repetition_penalty
+                    else:
+                        next_token_logits[i, token_id] /= repetition_penalty
+            
+            # --- NEW: PREVENT IMMEDIATE EOS PANIC ---
+            # Forbid the model from outputting EOS as the very first generated token
+            if step == 0:
+                next_token_logits[:, eos_token_id] = float('-inf')
+
+            next_token_logits = next_token_logits / temperature
+            probs = F.softmax(next_token_logits, dim=-1)
+            next_token = torch.multinomial(probs, num_samples=1)
+            
+            # --- THE BRAKES ---
+            if next_token.item() == eos_token_id: 
+                break
+            
+            input_ids = torch.cat([input_ids, next_token], dim=1)
+            
+        return input_ids
     # @torch.no_grad()
     # def generate_pseudo_ar_fixed(
     #     self,
