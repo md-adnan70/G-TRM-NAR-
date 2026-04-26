@@ -1,0 +1,3 @@
+Downloading/Loading TinyStories...
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Epoch 1/10:   0%|          | 0/1562 [00:00<?, ?it/s]

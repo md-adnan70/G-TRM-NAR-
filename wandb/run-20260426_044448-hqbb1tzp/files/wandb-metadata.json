@@ -1,0 +1,40 @@
+{
+  "os":  "Linux-5.15.0-97-generic-x86_64-with-glibc2.39",
+  "python":  "CPython 3.12.3",
+  "startedAt":  "2026-04-26T04:44:48.826891Z",
+  "program":  "/workspace/G-TRM-NAR-/ddiffusion.ipynb",
+  "codePath":  "/workspace/G-TRM-NAR-/ddiffusion.ipynb",
+  "codePathLocal":  "ddiffusion.ipynb",
+  "git":  {
+    "remote":  "https://github.com/md-adnan70/G-TRM-NAR-.git",
+    "commit":  "87deb6f75366d786298c09bdc1b691d111e4344d"
+  },
+  "email":  "rao.adnan.098@gmail.com",
+  "root":  "/workspace/G-TRM-NAR-",
+  "host":  "ba8a4eb0dd17",
+  "executable":  "/workspace/G-TRM-NAR-/venv/bin/python",
+  "cpu_count":  128,
+  "cpu_count_logical":  256,
+  "gpu":  "NVIDIA L40S",
+  "gpu_count":  1,
+  "disk":  {
+    "/":  {
+      "total":  "32212254720",
+      "used":  "944500736"
+    }
+  },
+  "memory":  {
+    "total":  "1081975209984"
+  },
+  "gpu_nvidia":  [
+    {
+      "name":  "NVIDIA L40S",
+      "memoryTotal":  "48305799168",
+      "cudaCores":  18176,
+      "architecture":  "Ada",
+      "uuid":  "GPU-85735872-0996-c570-a43a-f33445ef7551"
+    }
+  ],
+  "cudaVersion":  "12.4",
+  "writerId":  "evecm6dusrrylxzsaw2035qufnlbt2rk"
+}

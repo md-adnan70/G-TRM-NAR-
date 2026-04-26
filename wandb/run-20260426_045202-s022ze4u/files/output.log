@@ -1,0 +1,11 @@
+Downloading/Loading TinyStories...
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Epoch 1/10: 100%|██████████| 1562/1562 [1:25:26<00:00,  3.28s/it, Loss=12.1850, Steps=16]
+Epoch 1 Avg Loss: 12.1850
+Epoch 2/10: 100%|██████████| 1562/1562 [1:25:17<00:00,  3.28s/it, Loss=11.2601, Steps=16]
+Epoch 2 Avg Loss: 11.2601
+Epoch 3/10: 100%|██████████| 1562/1562 [1:24:59<00:00,  3.26s/it, Loss=12.2657, Steps=16]
+Epoch 3 Avg Loss: 12.2657
+Epoch 4/10: 100%|██████████| 1562/1562 [1:25:10<00:00,  3.27s/it, Loss=11.1506, Steps=16]
+Epoch 4 Avg Loss: 11.1506
+Epoch 5/10:   2%|▏         | 27/1562 [01:28<1:24:19,  3.30s/it, Loss=12.0733, Steps=16]

@@ -1,0 +1,24 @@
+2026-04-26 04:44:48,854 INFO    MainThread:2722 [wandb_setup.py:_flush():81] Current SDK version is 0.26.1
+2026-04-26 04:44:48,854 INFO    MainThread:2722 [wandb_setup.py:_flush():81] Configure stats pid to 2722
+2026-04-26 04:44:48,855 INFO    MainThread:2722 [wandb_setup.py:_flush():81] Loading settings from environment variables
+2026-04-26 04:44:48,856 INFO    MainThread:2722 [wandb_init.py:setup_run_log_directory():723] Logging user logs to /workspace/G-TRM-NAR-/wandb/run-20260426_044448-hqbb1tzp/logs/debug.log
+2026-04-26 04:44:48,856 INFO    MainThread:2722 [wandb_init.py:setup_run_log_directory():724] Logging internal logs to /workspace/G-TRM-NAR-/wandb/run-20260426_044448-hqbb1tzp/logs/debug-internal.log
+2026-04-26 04:44:48,857 INFO    MainThread:2722 [wandb_init.py:monkeypatch_ipython():642] configuring jupyter hooks <wandb.sdk.wandb_init._WandbInit object at 0x7f160b082300>
+2026-04-26 04:44:48,857 INFO    MainThread:2722 [wandb_init.py:init():850] calling init triggers
+2026-04-26 04:44:48,860 INFO    MainThread:2722 [wandb_init.py:init():855] wandb.init called with sweep_config: {}
+config: {'device': device(type='cuda'), 'BATCH_SIZE': 64, 'MAX_SEQ_LENGTH': 512, 'VOCAB_SIZE': 10000, 'MASK_TOKEN_ID': -100, 'D_MODEL': 512, 'N_HEADS': 8, 'D_FF': 2048, 'NUM_LAYERS': 2, 'N_SUP': 16, 'N_RECURSIONS': 6, 'EPOCHS': 10, 'LEARNING_RATE': 0.0004, '_wandb': {}}
+2026-04-26 04:44:48,861 INFO    MainThread:2722 [wandb_init.py:init():898] starting backend
+2026-04-26 04:44:49,261 INFO    MainThread:2722 [wandb_init.py:init():913] sending inform_init request
+2026-04-26 04:44:49,623 INFO    MainThread:2722 [wandb_init.py:init():918] backend started and connected
+2026-04-26 04:44:49,632 INFO    MainThread:2722 [wandb_run.py:_label_probe_notebook():1345] probe notebook
+2026-04-26 04:44:49,637 INFO    MainThread:2722 [wandb_init.py:init():988] updated telemetry
+2026-04-26 04:44:50,005 INFO    MainThread:2722 [wandb_init.py:init():1011] communicating run to backend with 90.0 second timeout
+2026-04-26 04:44:50,362 INFO    MainThread:2722 [wandb_init.py:init():1056] starting run threads in backend
+2026-04-26 04:44:50,710 INFO    MainThread:2722 [wandb_run.py:_console_start():2554] atexit reg
+2026-04-26 04:44:50,711 INFO    MainThread:2722 [wandb_run.py:_redirect():2403] redirect: wrap_raw
+2026-04-26 04:44:50,711 INFO    MainThread:2722 [wandb_run.py:_redirect():2472] Wrapping output streams.
+2026-04-26 04:44:50,712 INFO    MainThread:2722 [wandb_run.py:_redirect():2495] Redirects installed.
+2026-04-26 04:44:50,738 INFO    MainThread:2722 [wandb_init.py:init():1094] run started, returning control to user process
+2026-04-26 04:45:18,702 INFO    MainThread:2722 [wandb_init.py:_post_run_cell_hook():612] [no run ID] resuming backend
+2026-04-26 04:48:17,702 INFO    wandb-AsyncioManager-main:2722 [service_client.py:_forward_responses():134] Reached EOF.
+2026-04-26 04:48:17,703 INFO    wandb-AsyncioManager-main:2722 [mailbox.py:close():155] Closing mailbox, abandoning 1 handles.

@@ -1,0 +1,117 @@
+2026-04-26 04:52:02,300 INFO    MainThread:4411 [wandb_setup.py:_flush():81] Current SDK version is 0.26.1
+2026-04-26 04:52:02,302 INFO    MainThread:4411 [wandb_setup.py:_flush():81] Configure stats pid to 4411
+2026-04-26 04:52:02,302 INFO    MainThread:4411 [wandb_setup.py:_flush():81] Loading settings from environment variables
+2026-04-26 04:52:02,303 INFO    MainThread:4411 [wandb_init.py:setup_run_log_directory():723] Logging user logs to /workspace/G-TRM-NAR-/wandb/run-20260426_045202-s022ze4u/logs/debug.log
+2026-04-26 04:52:02,304 INFO    MainThread:4411 [wandb_init.py:setup_run_log_directory():724] Logging internal logs to /workspace/G-TRM-NAR-/wandb/run-20260426_045202-s022ze4u/logs/debug-internal.log
+2026-04-26 04:52:02,305 INFO    MainThread:4411 [wandb_init.py:monkeypatch_ipython():642] configuring jupyter hooks <wandb.sdk.wandb_init._WandbInit object at 0x7f912a1cc8c0>
+2026-04-26 04:52:02,307 INFO    MainThread:4411 [wandb_init.py:init():850] calling init triggers
+2026-04-26 04:52:02,308 INFO    MainThread:4411 [wandb_init.py:init():855] wandb.init called with sweep_config: {}
+config: {'device': device(type='cuda'), 'BATCH_SIZE': 64, 'MAX_SEQ_LENGTH': 512, 'VOCAB_SIZE': 10000, 'MASK_TOKEN_ID': -100, 'D_MODEL': 512, 'N_HEADS': 8, 'D_FF': 2048, 'NUM_LAYERS': 2, 'N_SUP': 16, 'N_RECURSIONS': 6, 'EPOCHS': 10, 'LEARNING_RATE': 0.0004, '_wandb': {}}
+2026-04-26 04:52:02,308 INFO    MainThread:4411 [wandb_init.py:init():898] starting backend
+2026-04-26 04:52:02,662 INFO    MainThread:4411 [wandb_init.py:init():913] sending inform_init request
+2026-04-26 04:52:03,023 INFO    MainThread:4411 [wandb_init.py:init():918] backend started and connected
+2026-04-26 04:52:03,031 INFO    MainThread:4411 [wandb_run.py:_label_probe_notebook():1345] probe notebook
+2026-04-26 04:52:03,035 INFO    MainThread:4411 [wandb_init.py:init():988] updated telemetry
+2026-04-26 04:52:03,337 INFO    MainThread:4411 [wandb_init.py:init():1011] communicating run to backend with 90.0 second timeout
+2026-04-26 04:52:03,796 INFO    MainThread:4411 [wandb_init.py:init():1056] starting run threads in backend
+2026-04-26 04:52:04,112 INFO    MainThread:4411 [wandb_run.py:_console_start():2554] atexit reg
+2026-04-26 04:52:04,112 INFO    MainThread:4411 [wandb_run.py:_redirect():2403] redirect: wrap_raw
+2026-04-26 04:52:04,113 INFO    MainThread:4411 [wandb_run.py:_redirect():2472] Wrapping output streams.
+2026-04-26 04:52:04,114 INFO    MainThread:4411 [wandb_run.py:_redirect():2495] Redirects installed.
+2026-04-26 04:52:04,125 INFO    MainThread:4411 [wandb_init.py:init():1094] run started, returning control to user process
+2026-04-26 10:34:34,854 ERROR   wandb-AsyncioManager-main:4411 [asyncio_manager.py:fn_wrap_exceptions():184] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/workspace/G-TRM-NAR-/venv/lib/python3.12/site-packages/wandb/sdk/lib/asyncio_manager.py", line 182, in fn_wrap_exceptions
+    await fn()
+  File "/workspace/G-TRM-NAR-/venv/lib/python3.12/site-packages/wandb/sdk/lib/service/service_client.py", line 45, in publish
+    await self._send_server_request(request)
+  File "/workspace/G-TRM-NAR-/venv/lib/python3.12/site-packages/wandb/sdk/lib/service/service_client.py", line 87, in _send_server_request
+    await self._drain_writer()
+  File "/workspace/G-TRM-NAR-/venv/lib/python3.12/site-packages/wandb/sdk/lib/service/service_client.py", line 96, in _drain_writer
+    await self._writer.drain()
+  File "/usr/lib/python3.12/asyncio/streams.py", line 392, in drain
+    await self._protocol._drain_helper()
+  File "/usr/lib/python3.12/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2026-04-26 10:34:34,872 ERROR   wandb-AsyncioManager-main:4411 [asyncio_manager.py:fn_wrap_exceptions():184] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/workspace/G-TRM-NAR-/venv/lib/python3.12/site-packages/wandb/sdk/lib/asyncio_manager.py", line 182, in fn_wrap_exceptions
+    await fn()
+  File "/workspace/G-TRM-NAR-/venv/lib/python3.12/site-packages/wandb/sdk/lib/service/service_client.py", line 45, in publish
+    await self._send_server_request(request)
+  File "/workspace/G-TRM-NAR-/venv/lib/python3.12/site-packages/wandb/sdk/lib/service/service_client.py", line 78, in _send_server_request
+    raise self._broken_exc.with_traceback(self._broken_tb)
+  File "/workspace/G-TRM-NAR-/venv/lib/python3.12/site-packages/wandb/sdk/lib/service/service_client.py", line 87, in _send_server_request
+    await self._drain_writer()
+  File "/workspace/G-TRM-NAR-/venv/lib/python3.12/site-packages/wandb/sdk/lib/service/service_client.py", line 96, in _drain_writer
+    await self._writer.drain()
+  File "/usr/lib/python3.12/asyncio/streams.py", line 392, in drain
+    await self._protocol._drain_helper()
+  File "/usr/lib/python3.12/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2026-04-26 10:34:34,875 ERROR   wandb-AsyncioManager-main:4411 [service_client.py:_forward_responses():131] Error reading server response.
+Traceback (most recent call last):
+  File "/workspace/G-TRM-NAR-/venv/lib/python3.12/site-packages/wandb/sdk/lib/service/service_client.py", line 127, in _forward_responses
+    while response := await self._read_server_response():
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/G-TRM-NAR-/venv/lib/python3.12/site-packages/wandb/sdk/lib/service/service_client.py", line 141, in _read_server_response
+    header = await self._reader.readexactly(_HEADER_BYTE_INT_LEN)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/streams.py", line 752, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/lib/python3.12/asyncio/streams.py", line 545, in _wait_for_data
+    await self._waiter
+  File "/usr/lib/python3.12/asyncio/selector_events.py", line 1075, in write
+    n = self._sock.send(data)
+        ^^^^^^^^^^^^^^^^^^^^^
+BrokenPipeError: [Errno 32] Broken pipe
+2026-04-26 10:34:34,877 INFO    wandb-AsyncioManager-main:4411 [mailbox.py:close():155] Closing mailbox, abandoning 1 handles.
+2026-04-26 10:34:35,376 INFO    MainThread:4411 [wandb_init.py:_post_run_cell_hook():612] [no run ID] resuming backend
+2026-04-26 10:34:35,381 ERROR   wandb-AsyncioManager-main:4411 [asyncio_manager.py:fn_wrap_exceptions():184] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/workspace/G-TRM-NAR-/venv/lib/python3.12/site-packages/wandb/sdk/lib/asyncio_manager.py", line 182, in fn_wrap_exceptions
+    await fn()
+  File "/workspace/G-TRM-NAR-/venv/lib/python3.12/site-packages/wandb/sdk/lib/service/service_client.py", line 45, in publish
+    await self._send_server_request(request)
+  File "/workspace/G-TRM-NAR-/venv/lib/python3.12/site-packages/wandb/sdk/lib/service/service_client.py", line 78, in _send_server_request
+    raise self._broken_exc.with_traceback(self._broken_tb)
+  File "/workspace/G-TRM-NAR-/venv/lib/python3.12/site-packages/wandb/sdk/lib/service/service_client.py", line 87, in _send_server_request
+    await self._drain_writer()
+  File "/workspace/G-TRM-NAR-/venv/lib/python3.12/site-packages/wandb/sdk/lib/service/service_client.py", line 96, in _drain_writer
+    await self._writer.drain()
+  File "/usr/lib/python3.12/asyncio/streams.py", line 392, in drain
+    await self._protocol._drain_helper()
+  File "/usr/lib/python3.12/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2026-04-26 10:34:35,383 ERROR   wandb-AsyncioManager-main:4411 [asyncio_manager.py:fn_wrap_exceptions():184] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/workspace/G-TRM-NAR-/venv/lib/python3.12/site-packages/wandb/sdk/lib/asyncio_manager.py", line 182, in fn_wrap_exceptions
+    await fn()
+  File "/workspace/G-TRM-NAR-/venv/lib/python3.12/site-packages/wandb/sdk/lib/service/service_client.py", line 45, in publish
+    await self._send_server_request(request)
+  File "/workspace/G-TRM-NAR-/venv/lib/python3.12/site-packages/wandb/sdk/lib/service/service_client.py", line 78, in _send_server_request
+    raise self._broken_exc.with_traceback(self._broken_tb)
+  File "/workspace/G-TRM-NAR-/venv/lib/python3.12/site-packages/wandb/sdk/lib/service/service_client.py", line 87, in _send_server_request
+    await self._drain_writer()
+  File "/workspace/G-TRM-NAR-/venv/lib/python3.12/site-packages/wandb/sdk/lib/service/service_client.py", line 96, in _drain_writer
+    await self._writer.drain()
+  File "/usr/lib/python3.12/asyncio/streams.py", line 392, in drain
+    await self._protocol._drain_helper()
+  File "/usr/lib/python3.12/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2026-04-26 10:34:53,976 INFO    MainThread:4411 [jupyter.py:save_ipynb():362] [no run ID] not saving jupyter notebook
+2026-04-26 10:34:53,977 INFO    MainThread:4411 [wandb_init.py:_pre_run_cell_hook():601] [no run ID] pausing backend
+2026-04-26 10:34:57,331 INFO    MainThread:4411 [wandb_init.py:_post_run_cell_hook():612] [no run ID] resuming backend
+2026-04-26 10:35:37,912 INFO    MainThread:4411 [jupyter.py:save_ipynb():362] [no run ID] not saving jupyter notebook
+2026-04-26 10:35:37,913 INFO    MainThread:4411 [wandb_init.py:_pre_run_cell_hook():601] [no run ID] pausing backend
+2026-04-26 10:35:57,745 INFO    MainThread:4411 [wandb_init.py:_post_run_cell_hook():612] [no run ID] resuming backend
+2026-04-26 10:38:27,480 INFO    MainThread:4411 [jupyter.py:save_ipynb():362] [no run ID] not saving jupyter notebook
+2026-04-26 10:38:27,482 INFO    MainThread:4411 [wandb_init.py:_pre_run_cell_hook():601] [no run ID] pausing backend
+2026-04-26 10:38:27,563 INFO    MainThread:4411 [wandb_init.py:_post_run_cell_hook():612] [no run ID] resuming backend
+2026-04-26 10:38:59,067 INFO    MainThread:4411 [jupyter.py:save_ipynb():362] [no run ID] not saving jupyter notebook
+2026-04-26 10:38:59,068 INFO    MainThread:4411 [wandb_init.py:_pre_run_cell_hook():601] [no run ID] pausing backend
+2026-04-26 10:38:59,192 INFO    MainThread:4411 [wandb_init.py:_post_run_cell_hook():612] [no run ID] resuming backend
